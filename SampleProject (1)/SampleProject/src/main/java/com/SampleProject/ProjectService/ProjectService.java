@@ -4,6 +4,8 @@ import com.SampleProject.Entity.AnswerRequest;
 import com.SampleProject.Entity.NextQuestionResponse;
 import com.SampleProject.Entity.Question;
 
+import com.SampleProject.Exception.LastDataBaseQuestion;
+import com.SampleProject.Exception.ResourceNotFoundException;
 import com.SampleProject.ProjectConfig.Properties;
 import com.SampleProject.ProjectRepo.ProjectRepo;
 import com.SampleProject.QuestionDto.QuestionDto;
@@ -66,14 +68,22 @@ public class ProjectService {
         return questionDto;
     }
 
-
     public NextQuestionResponse getNext(AnswerRequest answerRequest) {
         Question currentQuestion = projectRepo.findById(answerRequest.getQuestion_id())
-                .orElseThrow(() -> new RuntimeException("Question not found"));
-        NextQuestionResponse response = new NextQuestionResponse(currentQuestion.getAnswer(),getRandomQuestion());
+                .orElseThrow(() -> new ResourceNotFoundException("Qestion Not found"));
+        Question q1 = projectRepo.findFirstByIdGreaterThanOrderByIdAsc(currentQuestion.getQuestionId());
+        NextQuestionResponse response = null;
+        if (q1 == null) {
+            throw new LastDataBaseQuestion("This is the last question in the database");
+        } else {
+            QuestionDto questionDto1 = new QuestionDto();
+            questionDto1.setQuestion_id(q1.getQuestionId());
+            questionDto1.setQuestion(q1.getQuestion());
+            response = new NextQuestionResponse(currentQuestion.getAnswer(), questionDto1);
+
+        }
         return response;
     }
-
     public QuestionDto setDto() {
         return getRandomQuestion();
     }
